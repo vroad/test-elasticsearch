@@ -1,0 +1,28 @@
+box: docker.elastic.co/elasticsearch/elasticsearch:6.5.1
+build:
+  steps:
+    - script:
+        name: install plugins
+        code: |
+          /usr/share/elasticsearch/bin/elasticsearch-plugin install discovery-ec2 --batch
+          /usr/share/elasticsearch/bin/elasticsearch-plugin install repository-s3 --batch
+    - script:
+        name: copy,chown, and chmod configs
+        code: |
+          cp config/elasticsearch.yml /usr/share/elasticsearch/config/
+          chown elasticsearch:elasticsearch /usr/share/elasticsearch/config/elasticsearch.yml
+          chmod 664 /usr/share/elasticsearch/config/elasticsearch.yml
+          cp security/limits.conf /etc/security/
+          chmod 644 /etc/security/limits.conf
+    - script:
+        name: remove pipeline
+        code: 
+          rm -rf /pipeline
+    - internal/docker-push:
+        aws-access-key: $AWS_ACCESS_KEY_ID
+        aws-secret-key: $AWS_SECRET_ACCESS_KEY
+        aws-region: $AWS_REGION
+        aws-registry-id: $AWS_REGISTRY_ID
+        repository: test/elasticsearch
+        tag: $WERCKER_GIT_BRANCH
+        cmd: eswrapper
